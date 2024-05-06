@@ -17,7 +17,7 @@ builder.Services.AddDefaultIdentity<IdentityUser>()
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-builder.Services.AddScoped<MathQuestionsService>();
+builder.Services.AddSingleton<MathQuestionsService>();
 builder.Services.AddSingleton<MathBackgroundService>();
 builder.Services.AddHostedService<MathBackgroundService>(p => p.GetService<MathBackgroundService>());
 

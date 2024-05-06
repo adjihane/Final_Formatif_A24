@@ -40,7 +40,7 @@ export class AppComponent {
   private hubConnection?: signalR.HubConnection
 
   isConnected = false;
-  selecion = -1;
+  selection = -1;
 
   currentQuestion: MathQuestion | null = null;
 
@@ -48,7 +48,7 @@ export class AppComponent {
   }
 
   SelectChoice(choice:number) {
-    this.selecion = choice;
+    this.selection = choice;
     this.hubConnection!.invoke('SelectChoice', choice)
   }
 
@@ -88,7 +88,6 @@ export class AppComponent {
       return;
 
     this.hubConnection.on('PlayerInfo', (data:PlayerInfoDTO) => {
-      console.log("Received PlayerInfo");
       this.zone.run(() => {
         console.log(data);
         this.isConnected = true;
@@ -96,36 +95,15 @@ export class AppComponent {
       });
     });
 
-
     this.hubConnection.on('CurrentQuestion', (data:MathQuestion) => {
-      console.log("Received CurrentQuestion");
       this.zone.run(() => {
         console.log(data);
-        this.selecion = -1;
+        this.selection = -1;
         this.currentQuestion = data;
       });
     });
 
-    this.hubConnection.on('RightAnswer', () => {
-      console.log("Received RightAnswer");
-      this.zone.run(() => {
-        // TODO: Montrer au joueur qu'il avait la bonne réponse
-        this.nbRightAnswers++;
-        alert("Good Answer!");
-      });
-    });
-
-    this.hubConnection.on('WrongAnswer', (rightAnswer:number) => {
-      console.log("Received WrongAnswer");
-      this.zone.run(() => {
-        console.log(rightAnswer);
-        // TODO: Montrer au joueur qu'il avait la mauvaise réponse
-        alert("Wrong Answer! The right answer was: " + rightAnswer);
-      });
-    });
-
     this.hubConnection.on('IncreasePlayersChoices', (choiceIndex:number) => {
-      console.log("Received IncreasePlayersChoices");
       this.zone.run(() => {
         if(this.currentQuestion){
           this.currentQuestion.playerChoices[choiceIndex]++;

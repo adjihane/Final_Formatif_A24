@@ -1,8 +1,6 @@
-﻿using BackgroundServiceVote.Data;
-using BackgroundServiceVote.Hubs;
+﻿using BackgroundServiceVote.Hubs;
 using BackgroundServiceVote.Models;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
 
 namespace BackgroundServiceVote.Services
 {
@@ -20,16 +18,16 @@ namespace BackgroundServiceVote.Services
 
         private IHubContext<MathQuestionsHub> _mathQuestionHub;
 
-        private IServiceScopeFactory _serviceScopeFactory;
-
         private MathQuestion? _currentQuestion;
 
         public MathQuestion? CurrentQuestion => _currentQuestion;
 
-        public MathBackgroundService(IHubContext<MathQuestionsHub> mathQuestionHub, IServiceScopeFactory serviceScopeFactory)
+        private MathQuestionsService _mathQuestionsService;
+
+        public MathBackgroundService(IHubContext<MathQuestionsHub> mathQuestionHub, MathQuestionsService mathQuestionsService)
         {
             _mathQuestionHub = mathQuestionHub;
-            _serviceScopeFactory = serviceScopeFactory;
+            _mathQuestionsService = mathQuestionsService;
         }
 
         public void AddUser(string userId)
@@ -64,26 +62,24 @@ namespace BackgroundServiceVote.Services
             userData.Choice = choice;
 
             _currentQuestion.PlayerChoices[choice]++;
-            await _mathQuestionHub.Clients.All.SendAsync("IncreasePlayersChoices", choice);
+
+            // TODO: Notifier les clients qu'un joueur a choisi une réponse
         }
 
-        private async Task EvaluateChoices(BackgroundServiceContext backgroundServiceContext)
+        private async Task EvaluateChoices()
         {
+            // TODO: La méthode va avoir besoin d'un scope
             foreach (var userId in _data.Keys)
             {
                 var userData = _data[userId];
-                if (userData.Choice == _currentQuestion.RightAnswerIndex)
+                // TODO: Notifier les clients pour les bonnes et mauvaises réponses
+                // TODO: Modifier et sauvegarder le NbRightAnswers des joueurs qui ont la bonne réponse
+                if (userData.Choice == _currentQuestion!.RightAnswerIndex)
                 {
-                    Player? player = await backgroundServiceContext.Player.SingleOrDefaultAsync(p => p.UserId == userId);
-                    if (player != null)
-                    {
-                        player.NbRightAnswers++;
-                        await _mathQuestionHub.Clients.User(userId).SendAsync("RightAnswer");
-                    }
+
                 }
                 else
                 {
-                    await _mathQuestionHub.Clients.User(userId).SendAsync("WrongAnswer", _currentQuestion.Answers[_currentQuestion.RightAnswerIndex]);
                 }
 
             }
@@ -92,28 +88,18 @@ namespace BackgroundServiceVote.Services
             {
                 _data[key].Choice = -1;
             }
-            await backgroundServiceContext.SaveChangesAsync();
         }
 
         private async Task Update(CancellationToken stoppingToken)
         {
-            using (IServiceScope scope = _serviceScopeFactory.CreateScope())
+            if (_currentQuestion != null)
             {
-                BackgroundServiceContext backgroundServiceContext =
-                    scope.ServiceProvider.GetRequiredService<BackgroundServiceContext>();
-
-                if(_currentQuestion != null)
-                {
-                    await EvaluateChoices(backgroundServiceContext);
-                }
-
-                // Create new Question
-                MathQuestionsService? mathQuestionsService = scope.ServiceProvider.GetService<MathQuestionsService>();
-
-                _currentQuestion = mathQuestionsService.CreateQuestion();
-
-                await _mathQuestionHub.Clients.All.SendAsync("CurrentQuestion", _currentQuestion);
+                await EvaluateChoices();
             }
+
+            _currentQuestion = _mathQuestionsService.CreateQuestion();
+
+            await _mathQuestionHub.Clients.All.SendAsync("CurrentQuestion", _currentQuestion);
         }
 
 
