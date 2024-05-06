@@ -1,0 +1,15 @@
+<div style="padding: 20px">
+  <h1>Animation Angular</h1>
+  <button (click)="playNgAnimations(false)" mat-raised-button color="accent" style="margin-right: 10px">Animater une fois</button>
+  <button (click)="playNgAnimations(true)" mat-raised-button color="accent" style="margin-right: 10px">Animater en boucle</button>
+  <div [@shake]="first" style="height: 100px; width: 100px; background-color: red; margin: 20px"></div>
+
+  <div [@bounce]="second" style="height: 100px; width: 100px; background-color: green; margin: 20px"></div>
+
+  <div [@tada]="third" style="height: 100px; width: 100px; background-color: blue; margin: 20px"></div>
+</div>
+<div style="padding: 20px">
+  <h1>Animation CSS</h1>
+  <button (click)="shakeMe()" mat-raised-button color="accent" style="margin-right: 10px">Rotate</button>
+  <div [class.rotate-left]="rotate" style="height: 100px; width: 100px; background-color:orange; margin: 20px"></div>
+</div>
