@@ -14,7 +14,7 @@ namespace BackgroundServiceVote.Services
 
     public class MathBackgroundService : BackgroundService
     {
-        public const int DELAY = 30 * 1000;
+        public const int DELAY = 20 * 1000;
 
         private Dictionary<string, UserData> _data = new();
 

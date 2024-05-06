@@ -5,7 +5,7 @@ namespace BackgroundServiceVote.Services
     public class MathQuestionsService
     {
         private const int MAX_VALUE = 20;
-        private Random _random;
+        private readonly Random _random;
 
         public MathQuestionsService() {
             _random = new Random((int)DateTime.Now.Ticks);
@@ -13,11 +13,12 @@ namespace BackgroundServiceVote.Services
 
         public MathQuestion CreateQuestion()
         {
-            MathQuestion mathQuestion = new();
-
-            mathQuestion.Operation = (Operation)_random.Next(0, 3);
-            mathQuestion.ValueA = _random.Next(1, MAX_VALUE);
-            mathQuestion.ValueB = _random.Next(1, MAX_VALUE);
+            MathQuestion mathQuestion = new()
+            {
+                Operation = (Operation)_random.Next(0, 3),
+                ValueA = _random.Next(1, MAX_VALUE),
+                ValueB = _random.Next(1, MAX_VALUE)
+            };
 
             List<int> answers = new List<int>
             {
