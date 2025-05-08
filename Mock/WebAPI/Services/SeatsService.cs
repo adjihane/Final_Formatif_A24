@@ -28,13 +28,13 @@ namespace WebAPI.Services
                 throw new SeatOutOfBoundsException();
             }
 
-            var user = _context.Users.Single(u => u.Id == userid);
+            ExamenUser user = _context.Users.Single(u => u.Id == userid);
             if (user.Seat != null)
             {
                 throw new UserAlreadySeatedException();
             }
 
-            var seat = _context.Seats.SingleOrDefault(s => s.Number == seatnumber);
+            Seat? seat = _context.Seats.SingleOrDefault(s => s.Number == seatnumber);
             if(seat == null)
             {
                 seat = new Seat() { Number = seatnumber };

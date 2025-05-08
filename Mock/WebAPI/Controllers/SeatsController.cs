@@ -1,12 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using WebAPI.Data;
 using WebAPI.Exceptions;
 using WebAPI.Models;
 using WebAPI.Services;
@@ -15,32 +8,17 @@ namespace WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class SeatsController : ControllerBase
+    public class SeatsController(SeatsService service) : ControllerBase
     {
+        public virtual string? UserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-        public virtual string? UserId
-        {
-            get
-            {
-                return User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-            }
-        }
-
-        public SeatsService _service;
-
-        public SeatsController(SeatsService service)
-        {
-            _service = service;
-        }
-
-        // POST: api/Seats
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpGet("{seatnumber}")]
-        public ActionResult<Seat> ReserveSeat(int seatnumber)
+        // POST: api/Seats/4
+        [HttpGet("{seatNumber:int}")]
+        public ActionResult<Seat> ReserveSeat(int seatNumber)
         {
             try
             {
-                var seat = _service.ReserveSeat(UserId!, seatnumber);
+                Seat seat = service.ReserveSeat(UserId!, seatNumber);
                 return Ok(seat);
             }
             catch (SeatAlreadyTakenException)
@@ -49,14 +27,12 @@ namespace WebAPI.Controllers
             }
             catch (SeatOutOfBoundsException)
             {
-                return NotFound("Could not find " + seatnumber);
+                return NotFound("Could not find " + seatNumber);
             }
             catch (UserAlreadySeatedException)
             {
                 return BadRequest();
             }
         }
-
-        
     }
 }

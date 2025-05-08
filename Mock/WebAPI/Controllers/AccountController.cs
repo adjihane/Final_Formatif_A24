@@ -17,17 +17,11 @@ namespace WebAPI.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
-    public class AccountController : ControllerBase
+    public class AccountController(
+        UserManager<ExamenUser> userManager,
+        IConfiguration configuration
+    ) : ControllerBase
     {
-        UserManager<ExamenUser> userManager;
-        IConfiguration configuration;
-
-        public AccountController(UserManager<ExamenUser> userManager, IConfiguration configuration)
-        {
-            this.userManager = userManager;
-            this.configuration = configuration;
-        }
-
         // POST api/Account/Login
         [HttpPost]
         public async Task<ActionResult> Login(LoginDTO login)
@@ -37,7 +31,7 @@ namespace WebAPI.Controllers
             {
                 IList<string> roles = await userManager.GetRolesAsync(user);
 
-                List<Claim> authClaims = new List<Claim>();
+                List<Claim> authClaims = [];
 
                 foreach (string role in roles)
                 {
@@ -46,7 +40,8 @@ namespace WebAPI.Controllers
 
                 authClaims.Add(new Claim(ClaimTypes.NameIdentifier, user.Id));
 
-                SymmetricSecurityKey authkey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JWT:Secret"]!));
+                SymmetricSecurityKey authkey =
+                    new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JWT:Secret"]!));
 
                 JwtSecurityToken token = new JwtSecurityToken(
                     issuer: "https://locahost:7011",
@@ -54,7 +49,7 @@ namespace WebAPI.Controllers
                     claims: authClaims,
                     expires: DateTime.Now.AddHours(1),
                     signingCredentials: new SigningCredentials(authkey, SecurityAlgorithms.HmacSha256)
-                    );
+                );
 
 
                 return Ok(new
@@ -64,7 +59,8 @@ namespace WebAPI.Controllers
                 });
             }
 
-            return StatusCode(StatusCodes.Status500InternalServerError, new { Error = "L'utilisateur est introuvable ou le mot de passe de concorde pas" });
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { Error = "L'utilisateur est introuvable ou le mot de passe de concorde pas" });
         }
 
 
@@ -74,7 +70,8 @@ namespace WebAPI.Controllers
         {
             if (register.Password != register.PasswordConfirm)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { Error = "Le mot de passe et la confirmation ne sont pas identique" });
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new { Error = "Le mot de passe et la confirmation ne sont pas identique" });
             }
 
             ExamenUser user = new ExamenUser()
@@ -82,7 +79,7 @@ namespace WebAPI.Controllers
                 UserName = register.UserName,
                 Email = register.Email
             };
-            IdentityResult identityResult = await this.userManager.CreateAsync(user, register.Password);
+            IdentityResult identityResult = await userManager.CreateAsync(user, register.Password);
 
             if (!identityResult.Succeeded)
             {
@@ -92,7 +89,5 @@ namespace WebAPI.Controllers
 
             return Ok();
         }
-
-
     }
 }
