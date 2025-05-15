@@ -6,23 +6,22 @@ import { environment } from 'src/environments/environment';
 // Ensuite on inclut la librairie
 import * as signalR from "@microsoft/signalr"
 
- enum Operation
-{
-    Add,
-    Substract,
-    Multiply
+enum Operation {
+  Add,
+  Substract,
+  Multiply
 }
 
-interface MathQuestion{
-  operation:Operation;
-  valueA:number;
-  valueB:number;
-  answers:number[];
-  playerChoices:number[];
+interface MathQuestion {
+  operation: Operation;
+  valueA: number;
+  valueB: number;
+  answers: number[];
+  playerChoices: number[];
 }
 
-interface PlayerInfoDTO{
-  nbRightAnswers:number;
+interface PlayerInfoDTO {
+  nbRightAnswers: number;
 }
 
 @Component({
@@ -44,58 +43,59 @@ export class AppComponent {
 
   currentQuestion: MathQuestion | null = null;
 
-  constructor(public account:AccountService, private zone: NgZone){
+  constructor(public account: AccountService, private zone: NgZone) {
   }
 
-  SelectChoice(choice:number) {
+  SelectChoice(choice: number) {
     this.selection = choice;
     this.hubConnection!.invoke('SelectChoice', choice)
   }
 
-  async register(){
-    try{
+  async register() {
+    try {
       await this.account.register();
     }
-    catch(e){
+    catch (e) {
       alert("Erreur pendant l'enregistrement!!!!!");
       return;
     }
     alert("L'enregistrement a été un succès!");
   }
 
-  async login(){
+  async login() {
     await this.account.login();
   }
 
-  async logout(){
+  async logout() {
     await this.account.logout();
 
-    if(this.hubConnection?.state == signalR.HubConnectionState.Connected)
+    if (this.hubConnection?.state == signalR.HubConnectionState.Connected)
       this.hubConnection.stop();
     this.isConnected = false;
   }
 
-  isLoggedIn() : Boolean{
+  isLoggedIn(): Boolean {
     return this.account.isLoggedIn();
   }
 
   connectToHub() {
     this.hubConnection = new signalR.HubConnectionBuilder()
-                              .withUrl(this.baseUrl + 'game', { accessTokenFactory: () => sessionStorage.getItem("token")! })
-                              .build();
+      .withUrl(this.baseUrl + 'game', { accessTokenFactory: () => sessionStorage.getItem("token")! })
+      .build();
 
-    if(!this.hubConnection)
+    if (!this.hubConnection)
       return;
 
-    this.hubConnection.on('PlayerInfo', (data:PlayerInfoDTO) => {
+    this.hubConnection.on('PlayerInfo', (data: PlayerInfoDTO) => {
       this.zone.run(() => {
         console.log(data);
         this.isConnected = true;
         this.nbRightAnswers = data.nbRightAnswers;
+        alert(data.nbRightAnswers)
       });
     });
 
-    this.hubConnection.on('CurrentQuestion', (data:MathQuestion) => {
+    this.hubConnection.on('CurrentQuestion', (data: MathQuestion) => {
       this.zone.run(() => {
         console.log(data);
         this.selection = -1;
@@ -103,10 +103,11 @@ export class AppComponent {
       });
     });
 
-    this.hubConnection.on('IncreasePlayersChoices', (choiceIndex:number) => {
+    this.hubConnection.on('IncreasePlayersChoices', (choiceIndex: number) => {
       this.zone.run(() => {
-        if(this.currentQuestion){
+        if (this.currentQuestion) {
           this.currentQuestion.playerChoices[choiceIndex]++;
+          console.log("okkkkkk", choiceIndex)
         }
       });
     });

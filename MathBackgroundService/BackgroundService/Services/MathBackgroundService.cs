@@ -1,4 +1,5 @@
-﻿using BackgroundServiceVote.Hubs;
+﻿using BackgroundServiceVote.Data;
+using BackgroundServiceVote.Hubs;
 using BackgroundServiceVote.Models;
 using Microsoft.AspNetCore.SignalR;
 
@@ -24,16 +25,19 @@ namespace BackgroundServiceVote.Services
 
         private MathQuestionsService _mathQuestionsService;
 
-        public MathBackgroundService(IHubContext<MathQuestionsHub> mathQuestionHub, MathQuestionsService mathQuestionsService)
+        private IServiceScopeFactory _serviceScopeFactory;
+
+        public MathBackgroundService(IHubContext<MathQuestionsHub> mathQuestionHub, MathQuestionsService mathQuestionsService, IServiceScopeFactory serviceScopeFactory)
         {
             _mathQuestionHub = mathQuestionHub;
             _mathQuestionsService = mathQuestionsService;
+            _serviceScopeFactory = serviceScopeFactory;
         }
 
         public void AddUser(string userId)
         {
             if (!_data.ContainsKey(userId))
-            { 
+            {
                 _data[userId] = new UserData();
             }
             _data[userId].NbConnections++;
@@ -44,7 +48,7 @@ namespace BackgroundServiceVote.Services
             if (!_data.ContainsKey(userId))
             {
                 _data[userId].NbConnections--;
-                if(_data[userId].NbConnections <= 0)
+                if (_data[userId].NbConnections <= 0)
                     _data.Remove(userId);
             }
         }
@@ -55,7 +59,7 @@ namespace BackgroundServiceVote.Services
                 return;
 
             UserData userData = _data[userId];
-            
+
             if (userData.Choice != -1)
                 throw new Exception("A user cannot change is choice!");
 
@@ -64,29 +68,41 @@ namespace BackgroundServiceVote.Services
             _currentQuestion.PlayerChoices[choice]++;
 
             // TODO: Notifier les clients qu'un joueur a choisi une réponse
+            await _mathQuestionHub.Clients.All.SendAsync("IncreasePlayersChoices", userId, choice);
         }
 
         private async Task EvaluateChoices()
         {
             // TODO: La méthode va avoir besoin d'un scope
-            foreach (var userId in _data.Keys)
+            using (IServiceScope scope = _serviceScopeFactory.CreateScope())
             {
-                var userData = _data[userId];
-                // TODO: Notifier les clients pour les bonnes et mauvaises réponses
-                // TODO: Modifier et sauvegarder le NbRightAnswers des joueurs qui ont la bonne réponse
-                if (userData.Choice == _currentQuestion!.RightAnswerIndex)
+                BackgroundServiceContext dbContext = scope.ServiceProvider.GetRequiredService<BackgroundServiceContext>();
+
+                foreach (var userId in _data.Keys)
                 {
+                    var userData = _data[userId];
+                    // TODO: Notifier les clients pour les bonnes et mauvaises réponses
+                    // TODO: Modifier et sauvegarder le NbRightAnswers des joueurs qui ont la bonne réponse
+                    if (userData.Choice == _currentQuestion!.RightAnswerIndex)
+                    {
+                        Player player = dbContext.Player.FirstOrDefault(p => p.UserId == userId);
+                        player.NbRightAnswers++;
+                        await dbContext.SaveChangesAsync();
+                        await _mathQuestionHub.Clients.All.SendAsync("PlayerInfo", userId, userData, "Bonne réponse!");
+
+                    }
+                    else
+                    {
+                        await _mathQuestionHub.Clients.All.SendAsync("PlayerInfo", userId, userData, "Mauvaise réponse! La bonne réponse était " + CurrentQuestion.RightAnswerIndex) ;
+                    }
 
                 }
-                else
+                // Reset
+                foreach (var key in _data.Keys)
                 {
+                    _data[key].Choice = -1;
                 }
-
-            }
-            // Reset
-            foreach (var key in _data.Keys)
-            {
-                _data[key].Choice = -1;
+                await dbContext.SaveChangesAsync();
             }
         }
 
