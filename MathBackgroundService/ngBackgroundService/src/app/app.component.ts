@@ -5,6 +5,7 @@ import { environment } from 'src/environments/environment';
 // On doit commencer par ajouter signalr dans les node_modules: npm install @microsoft/signalr
 // Ensuite on inclut la librairie
 import * as signalR from "@microsoft/signalr"
+import { Data } from '@angular/router';
 
 enum Operation {
   Add,
@@ -88,27 +89,43 @@ export class AppComponent {
 
     this.hubConnection.on('PlayerInfo', (data: PlayerInfoDTO) => {
       this.zone.run(() => {
-        console.log(data);
+        console.log("playerinfo",data);
         this.isConnected = true;
         this.nbRightAnswers = data.nbRightAnswers;
-        alert(data.nbRightAnswers)
       });
     });
 
     this.hubConnection.on('CurrentQuestion', (data: MathQuestion) => {
       this.zone.run(() => {
-        console.log(data);
+        console.log("currentquestion",data);
         this.selection = -1;
         this.currentQuestion = data;
       });
     });
 
-    this.hubConnection.on('IncreasePlayersChoices', (choiceIndex: number) => {
+    this.hubConnection.on('IncreasePlayersChoices', (userid: string, choiceIndex: number) => {
       this.zone.run(() => {
         if (this.currentQuestion) {
           this.currentQuestion.playerChoices[choiceIndex]++;
-          console.log("okkkkkk", choiceIndex)
+          console.log("increaseplayerschoices", choiceIndex)
         }
+      });
+    });
+
+    this.hubConnection.on('GoodAnswer', (userid: string, userData: PlayerInfoDTO, message: string) => {
+      this.zone.run(() => {
+        alert(message);
+        this.nbRightAnswers = userData.nbRightAnswers;
+          console.log("gooood", userid, userData, message)
+          console.log("nbrightanswers", this.nbRightAnswers)
+        
+      });
+    });
+
+    this.hubConnection.on('BadAnswer', (message: string) => {
+      this.zone.run(() => {
+        alert(message)
+        console.log("baaaad", message)
       });
     });
 

@@ -2,6 +2,8 @@
 using BackgroundServiceVote.Hubs;
 using BackgroundServiceVote.Models;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
+using System.Security.AccessControl;
 
 namespace BackgroundServiceVote.Services
 {
@@ -85,15 +87,15 @@ namespace BackgroundServiceVote.Services
                     // TODO: Modifier et sauvegarder le NbRightAnswers des joueurs qui ont la bonne réponse
                     if (userData.Choice == _currentQuestion!.RightAnswerIndex)
                     {
-                        Player player = dbContext.Player.FirstOrDefault(p => p.UserId == userId);
+                        Player? player = await dbContext.Player.SingleOrDefaultAsync(p => p.UserId == userId);
                         player.NbRightAnswers++;
                         await dbContext.SaveChangesAsync();
-                        await _mathQuestionHub.Clients.All.SendAsync("PlayerInfo", userId, userData, "Bonne réponse!");
+                        await _mathQuestionHub.Clients.All.SendAsync("GoodAnswer", userId, player, "Bonne réponse!");
 
                     }
                     else
                     {
-                        await _mathQuestionHub.Clients.All.SendAsync("PlayerInfo", userId, userData, "Mauvaise réponse! La bonne réponse était " + CurrentQuestion.RightAnswerIndex) ;
+                        await _mathQuestionHub.Clients.All.SendAsync("BadAnswer", "Mauvaise réponse! La bonne réponse était " + CurrentQuestion.Answers[CurrentQuestion.RightAnswerIndex]);
                     }
 
                 }
