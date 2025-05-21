@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using System.Security.Claims;
 using WebAPI.Controllers;
 using WebAPI.Exceptions;
 using WebAPI.Models;
@@ -14,6 +15,7 @@ public class SeatsControllerTests
 {
     Mock<SeatsService> servicemock;
     Mock<SeatsController> controllermock;
+    public virtual string UserId { get { return User.FindFirstValue(ClaimTypes.NameIdentifier)!; } }
 
     public SeatsControllerTests()
     {

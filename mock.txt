@@ -1,0 +1,93 @@
+Le service Mocké avec Setup
+Si on utilise la méthode Setup*************************
+
+// En français : la méthode (string stockTicker, DateTime date) prend en paramètre "ABC" et n'importe quelle date, et retourne 42.42.
+stockMarketMock.Setup(x => x.GetStockValue("ABC", It.IsAny<Date>()).Returns(42.42M);
+// En français : la méthode (string stockTicker, DateTime date) prend en paramètre "XYZ" et n'importe quelle date, et retourne 33.33.
+stockMarketMock.Setup(x => x.GetStockValue("XYZ", It.IsAny<Date>()).Returns(33.33M);
+
+
+Le service Mocké avec SetupSequence
+Si on utilise la méthode SetupSequence (sur un AUTRE mock)***************************
+
+stockMarketMock.SetupSequence(x => x.GetStockValue(It.IsAny<string>(), It.IsAny<DateTime>()))
+    .Returns(33.33M)
+    .Returns(42.00M);
+	
+	
+	
+tester un controleur avec les mocks */*********************************
+Moq - Création
+Créer un mock
+Mock<UsersService> usersServiceMock = new Mock<UsersService>();
+
+Nous aurons donc un faux service que l’on pourra configurer
+L’option Callbase permet de mocker seulement une partie une partie de l’objet et d’utiliser le code original dans les autres cas
+Mock<TripsController> tripsControllerMock = new Mock<TripsController>() { CallBase = true };
+
+    Méthodes
+    mock.Setup(foo => foo.DoSomething("ping")).Returns(true);
+	
+	Propriétés
+	mock.Setup(foo => foo.Name).Returns("bar");
+	
+	It.IsAny
+Exécute le return pour toutes les valeurs possibles
+mock.Setup(foo => foo.DoSomething(It.IsAny<string>())).Returns(true);
+
+It.Is
+Permets de configurer une certaine plage de données
+mock.Setup(foo => foo.Add(It.Is<int>(i => i % 2 == 0))).Returns(true);
+
+Pour une fonction qui retourne null**************************************************
+
+tripsServiceMock.Setup(s => s.Get(It.IsAny<int>())).Returns((Trip?)null);
+
+Ou encore
+
+tripsServiceMock.Setup(s => s.Get(It.IsAny<int>())).Returns(value: null);
+
+Dans ce cas, un appel à DoSomething du service mocké va toujours lancer une exception de type MyException*********************************************
+
+serviceMock.Setup(s => s.DoSomething(It.IsAny<string>())).Throws(new MyException());
+
+serviceMock.Setup(s => s.DoSomething(42)).Throws(new MyException("Mon Message"));
+
+Pour une fonction qui retourne void*************************************
+Comme que le comportement par défaut est de rien faire lorsqu’un méthode de notre mock n’est pas configure, il n’est pas souvent nécessairement de configurer une méthode qui retourne void toutefois, c’est possible en utilisant .Verifiable
+
+tripsServiceMock.Setup(s => s.Delete(It.IsAny<int>())).Verifiable();
+
+La méthode Callback
+Permet d’exécuter du code lorsque la méthode est appelée Exemple, simuler une suppression Le callback enlève un élément de la liste
+
+tripsServiceMock.Setup(s => s.Delete(It.IsAny<int>())).Callback((int id) =>
+{
+    allTrips.Remove(trip);
+}).Verifiable();
+
+
+Comment faire si une action contient le code suivant?**************************************
+User.FindFirstValue(ClaimTypes.NameIdentifier)
+
+Étape 1
+Faire une propriété pouvant être mockée dans notre contrôleur
+
+Public virtual string UserId { get { return User.FindFirstValue(ClaimTypes.NameIdentifier)!; } }
+
+Étape 2
+Faire un mock dans nos tests du contrôleur utilisant le vrai code
+
+Mock<TripsController> tripsControllerMock = new Mock<TripsController>() { CallBase = true };
+
+Étape 3
+Faire la configuration de la propriété UserId
+
+tripsControllerMock.Setup(t => t.UserId).Returns("2");
+
+Étape 4
+Utiliser notre mock (Dans cet exemple, le contrôleur a retourné un Ok sans paramètre et le type de retour du résultat de l'action est OkResult)
+
+var actionresult = tripsControllerMock.Object.Delete(1)
+var result = actionresult.Result as OkResult;
+Assert.IsNotNull(result);
