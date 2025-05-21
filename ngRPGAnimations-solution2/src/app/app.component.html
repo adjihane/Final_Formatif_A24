@@ -1,0 +1,16 @@
+<div style="">
+  <img width="800" style="position: relative; " src="../assets/background.png"/>
+  <div [class.rotate-center]="css_rotateCenter" [class.rotate-hor-top]="css_rotateTop" [class.wobble-hor-bottom]="css_hit" style="width: fit-content; position: absolute; top: 250px; left: 350px;">
+    <img id="slimeyId"
+      [@death]="ng_death" [@attack]="ng_attack" [@preAttack]="ng_preAttack" [@bounce]="ng_bounce" [@shake]="ng_shake" [@flip]="ng_flip"
+      class="slime" width="150" src="../assets/slimeyWithBorder.png"/>
+  </div>
+</div>
+<div style="padding: 20px">
+  <button *ngIf="!slimeIsPresent" [disabled]="cantInteractWithSlime" mat-raised-button color="accent" (click)="spawn()">Spawn</button>
+  <button *ngIf="slimeIsPresent" [disabled]="cantInteractWithSlime" mat-raised-button color="accent" (click)="death()">Death</button>
+  <button *ngIf="slimeIsPresent" [disabled]="cantInteractWithSlime" mat-raised-button color="accent" (click)="attack()">Attack</button>
+  <button *ngIf="slimeIsPresent" [disabled]="cantInteractWithSlime" mat-raised-button color="accent" (click)="hit()">Hit</button>
+  <button *ngIf="slimeIsPresent" [disabled]="cantInteractWithSlime" mat-raised-button color="accent" (click)="bounceShakeFlip()">Bounce/Shake/Flip</button>
+  <button *ngIf="slimeIsPresent" [disabled]="cantInteractWithSlime" mat-raised-button color="accent" (click)="infiniteTripleSpin()">Infinite Triple Spin</button>
+</div>
